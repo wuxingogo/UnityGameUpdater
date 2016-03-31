@@ -1,6 +1,6 @@
-##这是一个GameUpdater
+##这是GameUpdater的扩展程序
 
-GameUpdater是Unity3D的一个热更新插件.
+GameUpdater是Unity3D的一个非常好用的热更新插件.
 
 他的思路是每次登陆游戏检查版本,如果和远程版本不同,则对比版本文件里需要更新的文件,然后逐个从远程服务器上更新bundle文件.
 
