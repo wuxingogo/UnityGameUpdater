@@ -1,0 +1,9 @@
+ManifestFileVersion: 0
+AssetBundleManifest:
+  AssetBundleInfos:
+    Info_0:
+      Name: aaa
+      Dependencies: {}
+    Info_1:
+      Name: gameobject
+      Dependencies: {}
