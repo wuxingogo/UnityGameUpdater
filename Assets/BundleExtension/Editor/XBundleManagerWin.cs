@@ -14,7 +14,7 @@ using System.IO;
 using System.Collections.Generic;
 using System;
 using LitJson;
-using Xingyu.Tools;
+using wuxingogo.Tools;
 
 namespace wuxingogo.bundle
 {
@@ -223,12 +223,8 @@ namespace wuxingogo.bundle
                 vc.bundles = bundles;
             }
             string verJson = JsonMapper.ToJson( vc );
-            using( MemoryStream memeory = new MemoryStream() )
-            {
-                StreamUtils.Write( memeory, verJson );
-                BundleEncode.CreateBinaryFileAndHead( destPath, memeory.ToArray() );
-            }
-
+            
+            BundleEncode.CreateBinaryFileAndHead( destPath, verJson );
             // Diff version file
             //BundleManager.GetInstance ().UpdateLocalVersionConfig (vc, destPath + "/" + BundleConfig.versionFileName + BundleConfig.suffix);
         }

@@ -15,6 +15,7 @@ using SevenZip.Compression.LZMA;
 using Xxtea;
 using System;
 using System.Security.Cryptography;
+using wuxingogo.Tools;
 
 namespace wuxingogo.bundle
 {
@@ -115,11 +116,16 @@ namespace wuxingogo.bundle
 				File.WriteAllBytes(outputPath, value);
 		}
 
-		public static void CreateBinaryFileAndHead(string outputPath, byte[] value)
+		public static void CreateBinaryFileAndHead(string outputPath, string json)
 		{
             if( File.Exists( outputPath ) )
             {
-
+                byte[] value;
+                using( MemoryStream memeory = new MemoryStream() )
+                {
+                    StreamUtils.Write( memeory, json );
+                    value = memeory.ToArray();
+                }
                 using( MemoryStream memoryStream = new MemoryStream() )
                 {
                     var rhs = File.ReadAllBytes( outputPath );
@@ -134,7 +140,7 @@ namespace wuxingogo.bundle
             }
             else
             {
-                File.WriteAllBytes( outputPath, value );
+                File.WriteAllText( outputPath, json );
             }
 		}
 	}

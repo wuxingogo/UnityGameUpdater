@@ -1,18 +1,17 @@
 ﻿using UnityEngine;
 using System.Collections;
-using wuxingogo.Runtime;
 using System.Collections.Generic;
 using System.IO;
 using LitJson;
-using Xingyu.Tools;
 using System;
 using Object = UnityEngine.Object;
+using wuxingogo.Tools;
 
 namespace wuxingogo.bundle
 {
     public delegate void AllUpdated( VersionConfig config );
 
-	public sealed class BundleManager : XMonoBehaviour
+	public sealed class BundleManager : MonoBehaviour
 	{
 		#region BundleManager
 		public static string suffix = ".bytes";
