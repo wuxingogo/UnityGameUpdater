@@ -42,7 +42,7 @@ public class BundleLoader
 			if(relativePath.Contains (".")){
 				relativePath = relativePath.Substring (0, relativePath.LastIndexOf ("."));
 			}
-			var objInResources = Resources.Load<TextAsset> (relativePath);
+			var objInResources = Resources.Load (relativePath, typeof( TextAsset )) as TextAsset;
 			var memory = objInResources.bytes;
 			Resources.UnloadAsset (objInResources);
 			return memory;
@@ -57,12 +57,23 @@ public class BundleLoader
 			if(relativePath.Contains (".")){
 				relativePath = relativePath.Substring (0, relativePath.LastIndexOf ("."));
 			}
-			var objInResources = Resources.Load<TextAsset> (relativePath);
-			var text = objInResources.text;
-			Resources.UnloadAsset (objInResources);
-			return text;
+            var objResources = Resources.Load<TextAsset>( relativePath );
+            var text = objResources.text;
+            Resources.UnloadAsset( objResources );
+            return text;
 		}
 	}
+
+    public static string LoadResourcesText( string path )
+    {
+        string result = string.Empty;
+        string resourcePath = string.Format( @"Assets/Resources/{0}", path );
+        if( File.Exists( resourcePath ) )
+        {
+            result = File.ReadAllText( resourcePath );
+        }
+        return result;
+    }
 
 	private static string LoadMemoryString (string relativePath)
 	{

@@ -117,20 +117,25 @@ namespace wuxingogo.bundle
 
 		public static void CreateBinaryFileAndHead(string outputPath, byte[] value)
 		{
-			if (File.Exists (outputPath)) {
-				
-				using (MemoryStream memoryStream = new MemoryStream ()) {
-					var rhs = File.ReadAllBytes (outputPath);
-					var length = BitConverter.GetBytes (value.Length);
-					memoryStream.Write (length, 0, length.Length);
-					memoryStream.Write (value, 0, value.Length);
-					memoryStream.Write (rhs, 0, rhs.Length);
+            if( File.Exists( outputPath ) )
+            {
 
-					File.Delete (outputPath);
-					File.WriteAllBytes (outputPath, memoryStream.ToArray ());
-				}
-			} else
-				Debug.LogError ("Binary was not found");
+                using( MemoryStream memoryStream = new MemoryStream() )
+                {
+                    var rhs = File.ReadAllBytes( outputPath );
+                    var length = BitConverter.GetBytes( value.Length );
+                    memoryStream.Write( length, 0, length.Length );
+                    memoryStream.Write( value, 0, value.Length );
+                    memoryStream.Write( rhs, 0, rhs.Length );
+
+                    File.Delete( outputPath );
+                    File.WriteAllBytes( outputPath, memoryStream.ToArray() );
+                }
+            }
+            else
+            {
+                File.WriteAllBytes( outputPath, value );
+            }
 		}
 	}
 

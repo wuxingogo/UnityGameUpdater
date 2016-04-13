@@ -1,1 +1,0 @@
-{"versionNum":"03/18/2016 14:35:37","bundleRelativePath":"publish","bundles":[{"name":"aaa","md5":"0f6aa4c8df12b204f66229f3279fafb9","size":11916,"include":["Assets/Cube 1.prefab"],"dependency":["Assets/Cube 1.prefab"]},{"name":"cube","md5":"87c8dff2f66cfa7e6d2f72df90776666","size":11916,"include":["Assets/Cube.prefab"],"dependency":["Assets/Cube.prefab"]}]}

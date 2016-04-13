@@ -18,200 +18,220 @@ using Xingyu.Tools;
 
 namespace wuxingogo.bundle
 {
-	public class XBundleManagerWin : XBaseWindow
-	{
-    
-		[MenuItem ("Wuxingogo/Wuxingogo BundleManager Window")]
-		static void Initialization ()
-		{
-			InitWindow<XBundleManagerWin> ();
-		}
+    public class XBundleManagerWin : XBaseWindow
+    {
 
-		bool isPackageInApp = false;
-		BuildTarget buildTarget = BuildTarget.Android;
-		List<BundleInfo> bundles = new List<BundleInfo> ();
+        [MenuItem( "Window/BundleManager Window" )]
+        static void Initialization()
+        {
+            InitWindow<XBundleManagerWin>();
+        }
 
-		private VersionConfig currVersion = null;
+        bool isPackageInApp = false;
+        BuildTarget buildTarget = BuildTarget.Android;
+        List<BundleInfo> bundles = new List<BundleInfo>();
 
-		public string BuildPath {
-			get {
-				return "AssetBundles/" + buildTarget + "/" + BundleConfig.bundleRelativePath;
-			}
-		}
+        private VersionConfig currVersion = null;
 
-		public string ResourcesPath {
-			get {
-				return BundleConfig.resourcesPath + "/" + BundleConfig.bundleRelativePath;
-			}
-		}
+        public string BuildPath
+        {
+            get
+            {
+                return "AssetBundles/" + buildTarget + "/" + BundleConfig.bundleRelativePath;
+            }
+        }
 
-		public override bool IsAutoScroll {
-			get {
-				return false;
-			}
-		}
+        public string ResourcesPath
+        {
+            get
+            {
+                return BundleConfig.resourcesPath + "/" + BundleConfig.bundleRelativePath;
+            }
+        }
 
-		public override void OnXGUI ()
-		{
-			BeginHorizontal ();
-			CreateLabel ("Version Name");
-			BundleConfig.versionFileName = CreateStringField (BundleConfig.versionFileName);
-			EndHorizontal ();
-			BeginHorizontal ();
-			CreateLabel ("Encrypt Key");
-			BundleConfig.password = CreateStringField (BundleConfig.password);
-			EndHorizontal ();
+        public override bool IsAutoScroll
+        {
+            get
+            {
+                return false;
+            }
+        }
 
-			BeginHorizontal ();
-			CreateLabel ("Package In App");
-			isPackageInApp = CreateCheckBox (isPackageInApp);
-			EndHorizontal ();
+        public override void OnXGUI()
+        {
+            BeginHorizontal();
+            CreateLabel( "Version Name" );
+            BundleConfig.versionFileName = CreateStringField( BundleConfig.versionFileName );
+            EndHorizontal();
+            BeginHorizontal();
+            CreateLabel( "Encrypt Key" );
+            BundleConfig.password = CreateStringField( BundleConfig.password );
+            EndHorizontal();
 
-			BeginHorizontal ();
-			CreateLabel ("Target Platform");
-			buildTarget = (BuildTarget)CreateEnumSelectable (buildTarget);
-			EndHorizontal ();
+            BeginHorizontal();
+            CreateLabel( "Package In App" );
+            isPackageInApp = CreateCheckBox( isPackageInApp );
+            EndHorizontal();
 
-			if (CreateSpaceButton ("Create New Version"))
-				CreateNewVersion ();
+            BeginHorizontal();
+            CreateLabel( "Target Platform" );
+            buildTarget = ( BuildTarget )CreateEnumSelectable( buildTarget );
+            EndHorizontal();
 
-			DoButton ("Open A Bundle", GetAssetPoolBundles);
-			CreateLabel (Application.temporaryCachePath, true);
-		}
+            if( CreateSpaceButton( "Create New Version" ) )
+                CreateNewVersion();
 
-		void CreateNewVersion ()
-		{
-			if (!Directory.Exists (BundleConfig.bundlePoolRelativePath + "/" + buildTarget)) {
-				Directory.CreateDirectory (BundleConfig.bundlePoolRelativePath + "/" + buildTarget);
-			}
-			BuildPipeline.BuildAssetBundles (BundleConfig.bundlePoolRelativePath + "/" + buildTarget, 
-				BuildAssetBundleOptions.UncompressedAssetBundle, buildTarget);
+            DoButton( "Open A Bundle", GetAssetPoolBundles );
+            CreateLabel( Application.temporaryCachePath, true );
+        }
 
-			GetAllBundles ();
-			CopyResources ();
-			CreateVersionFile (bundles, isPackageInApp);
+        void CreateNewVersion()
+        {
+            if( !Directory.Exists( BundleConfig.bundlePoolRelativePath + "/" + buildTarget ) )
+            {
+                Directory.CreateDirectory( BundleConfig.bundlePoolRelativePath + "/" + buildTarget );
+            }
+            BuildPipeline.BuildAssetBundles( BundleConfig.bundlePoolRelativePath + "/" + buildTarget,
+                BuildAssetBundleOptions.UncompressedAssetBundle, buildTarget );
 
-			AssetDatabase.Refresh ();
+            GetAllBundles();
+            CopyResources();
+            CreateVersionFile( bundles, isPackageInApp );
 
-
-		}
-
-		void GetAssetPoolBundles ()
-		{
-			string relativePath = BuildPath + "/" + BundleConfig.versionFileName;
-
-			var memory = File.ReadAllBytes (relativePath);
-
-			using (MemoryStream memoryStream = new MemoryStream())
-			{
-				byte[] length = null;
-				int offset = System.Runtime.InteropServices.Marshal.SizeOf (typeof(int));
-				memoryStream.Write (memory, 0, offset);
-				length = memoryStream.ToArray ();
-				var versionLength = BitConverter.ToInt32 (length, 0);
+            AssetDatabase.Refresh();
 
 
-				memoryStream.Position = 0;
-				memoryStream.Write (memory, offset, versionLength);
-				byte[] versionByte = memoryStream.ToArray ();
-				using (MemoryStream versionStream = new MemoryStream(versionByte))
-				{
-					string versionContent = "";
-					StreamUtils.Read (versionStream, out versionContent);
-					currVersion = JsonMapper.ToObject <VersionConfig>(versionContent);
-				}
+        }
 
-				offset = offset + versionByte.Length;
-				int limit = memory.Length - offset;
+        void GetAssetPoolBundles()
+        {
+            string relativePath = BuildPath + "/" + BundleConfig.versionFileName;
 
-				memoryStream.Position = 0;
-				memoryStream.Write (memory, offset, limit);
-				byte[] buffer = memoryStream.ToArray ();
-				int index = 0;
-				int count = 0;
-				foreach (var item in currVersion.bundles) {
-					Debug.Log ("Item is : " + item.name);
-					count = (int)item.size;
-					using (MemoryStream bundleStream = new MemoryStream()){
-						bundleStream.Write ( buffer, index,  count);
-						//File.WriteAllBytes (BuildPath + "/" + item.name + BundleConfig.suffix, bundleStream.ToArray ());
-						var decryptBuffer = BundleEncode.DeompressAndDecryptLZMA (bundleStream.ToArray (), BundleConfig.password);
-						var assetbundle = AssetBundle.CreateFromMemoryImmediate (decryptBuffer.ToArray ());
-						foreach (var entry in item.include) {
-							Debug.Log ("Asset Name is : " + entry);
-						}
-						assetbundle.Unload (true);
+            var memory = File.ReadAllBytes( relativePath );
 
-					}
-					index += count;
-				}
-
-			}
-
-		}
-
-		void GetAllBundles ()
-		{
-			bundles.Clear ();
-			var allBundle = AssetDatabase.GetAllAssetBundleNames ();
-			foreach (var bundleName in allBundle) {
-				
-				BundleInfo bundle = new BundleInfo (bundleName);
-				bundles.Add (bundle);
-			}
-		}
-
-		void CopyResources ()
-		{
-			string destPath = isPackageInApp
-				? BundleConfig.resourcesPath + "/" + BundleConfig.bundleRelativePath
-				: BuildPath;
-			if (Directory.Exists (destPath)) {
-				Directory.Delete (destPath, true);
-			}
-			Directory.CreateDirectory (destPath);
-
-			foreach (var bundle in bundles) {
-
-				var bytes = File.ReadAllBytes (BundleConfig.bundlePoolRelativePath + "/" + buildTarget + "/" + bundle.name);
-				var memory = BundleEncode.GetCompressAndEncryptLZMA (bytes, BundleConfig.password);
-
-				bundle.size = (uint)memory.Length;
-				bundle.md5 = BundleEncode.GetFileMD5 (memory);
-
-				if (isPackageInApp || !bundle.isExist ()) {
-					BundleEncode.CreateBinaryFile (destPath + "/" + BundleConfig.versionFileName, memory);
-				}
-			}
-		}
-
-		public void CreateVersionFile (List<BundleInfo> bundles, bool copyToStreamingAssets = false)
-		{
-			string destPath = copyToStreamingAssets ? ResourcesPath : BuildPath;
-			VersionConfig vc = new VersionConfig ();
-			vc.versionNum = DateTime.Now.ToString ();
-			vc.bundleRelativePath = BundleConfig.bundleRelativePath;
+            using( MemoryStream memoryStream = new MemoryStream() )
+            {
+                byte[] length = null;
+                int offset = System.Runtime.InteropServices.Marshal.SizeOf( typeof( int ) );
+                memoryStream.Write( memory, 0, offset );
+                length = memoryStream.ToArray();
+                var versionLength = BitConverter.ToInt32( length, 0 );
 
 
-			if (!copyToStreamingAssets) {
-				foreach (var item in bundles) {
-					if (!item.isExist ()) {
-						vc.bundles.Add (item);
-					}
-				}
-			} else {
-				vc.bundles = bundles;
-			}
-			string verJson = JsonMapper.ToJson (vc);
-			using (MemoryStream memeory = new MemoryStream())
-			{
-				StreamUtils.Write (memeory, verJson);
-				BundleEncode.CreateBinaryFileAndHead (destPath + "/" + BundleConfig.versionFileName ,  memeory.ToArray ());
-			}
+                memoryStream.Position = 0;
+                memoryStream.Write( memory, offset, versionLength );
+                byte[] versionByte = memoryStream.ToArray();
+                using( MemoryStream versionStream = new MemoryStream( versionByte ) )
+                {
+                    string versionContent = "";
+                    StreamUtils.Read( versionStream, out versionContent );
+                    currVersion = JsonMapper.ToObject<VersionConfig>( versionContent );
+                }
 
-			// 对比后的新文件
-			//BundleManager.GetInstance ().UpdateLocalVersionConfig (vc, destPath + "/" + BundleConfig.versionFileName + BundleConfig.suffix);
-		}
+                offset = offset + versionByte.Length;
+                int limit = memory.Length - offset;
 
-	}
+                memoryStream.Position = 0;
+                memoryStream.Write( memory, offset, limit );
+                byte[] buffer = memoryStream.ToArray();
+                int index = 0;
+                int count = 0;
+                foreach( var item in currVersion.bundles )
+                {
+                    count = ( int )item.size;
+                    using( MemoryStream bundleStream = new MemoryStream() )
+                    {
+                        bundleStream.Write( buffer, index, count );
+                        var decryptBuffer = BundleEncode.DeompressAndDecryptLZMA( bundleStream.ToArray(), BundleConfig.password );
+                        var assetbundle = AssetBundle.CreateFromMemoryImmediate( decryptBuffer.ToArray() );
+                        assetbundle.Unload( true );
+
+                    }
+                    index += count;
+                }
+
+            }
+
+        }
+
+        void GetAllBundles()
+        {
+            bundles.Clear();
+            var allBundle = AssetDatabase.GetAllAssetBundleNames();
+            foreach( var bundleName in allBundle )
+            {
+
+                BundleInfo bundle = new BundleInfo( bundleName );
+                bundles.Add( bundle );
+            }
+        }
+
+        void CopyResources()
+        {
+            string destPath = isPackageInApp
+                ? BundleConfig.resourcesPath + "/" + BundleConfig.bundleRelativePath
+                : BuildPath;
+            if( Directory.Exists( destPath ) )
+            {
+                Directory.Delete( destPath, true );
+            }
+            Directory.CreateDirectory( destPath );
+
+            foreach( var bundle in bundles )
+            {
+
+                var bytes = File.ReadAllBytes( BundleConfig.bundlePoolRelativePath + "/" + buildTarget + "/" + bundle.name );
+                var memory = BundleEncode.GetCompressAndEncryptLZMA( bytes, BundleConfig.password );
+
+                bundle.size = ( uint )memory.Length;
+                bundle.md5 = BundleEncode.GetFileMD5( memory );
+
+                if( isPackageInApp ){
+                    BundleEncode.CreateBinaryFile( destPath + "/" + bundle.name + BundleConfig.suffix, memory );
+                }
+                else if(!isPackageInApp && !bundle.isExist() ){
+                    BundleEncode.CreateBinaryFile( destPath + "/" + BundleConfig.versionFileName, memory );
+                }
+            }
+        }
+
+        public void CreateVersionFile( List<BundleInfo> bundles, bool copyToStreamingAssets = false )
+        {
+            string destPath = "";
+            if( copyToStreamingAssets )
+                destPath = ResourcesPath + "/" + BundleConfig.versionFileName + BundleConfig.suffix;
+            else
+                destPath =  BuildPath + BundleConfig.versionFileName;
+
+            VersionConfig vc = new VersionConfig();
+            vc.versionNum = DateTime.Now.ToString();
+            vc.bundleRelativePath = BundleConfig.bundleRelativePath;
+
+
+            if( !copyToStreamingAssets )
+            {
+                foreach( var item in bundles )
+                {
+                    if( !item.isExist() )
+                    {
+                        vc.bundles.Add( item );
+                    }
+                }
+            }
+            else
+            {
+                vc.bundles = bundles;
+            }
+            string verJson = JsonMapper.ToJson( vc );
+            using( MemoryStream memeory = new MemoryStream() )
+            {
+                StreamUtils.Write( memeory, verJson );
+                BundleEncode.CreateBinaryFileAndHead( destPath, memeory.ToArray() );
+            }
+
+            // Diff version file
+            //BundleManager.GetInstance ().UpdateLocalVersionConfig (vc, destPath + "/" + BundleConfig.versionFileName + BundleConfig.suffix);
+        }
+
+    }
 }

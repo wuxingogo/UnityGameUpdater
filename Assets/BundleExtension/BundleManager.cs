@@ -10,6 +10,8 @@ using Object = UnityEngine.Object;
 
 namespace wuxingogo.bundle
 {
+    public delegate void AllUpdated( VersionConfig config );
+
 	public sealed class BundleManager : XMonoBehaviour
 	{
 		#region BundleManager
@@ -17,6 +19,8 @@ namespace wuxingogo.bundle
 		public static string password = "password";
 
 		private static BundleManager _instance = null;
+
+        public event AllUpdated OnAllUpdated;
 
 		public static BundleManager GetInstance()
 		{
@@ -56,11 +60,11 @@ namespace wuxingogo.bundle
 			yield return www;
 			if (www.error == null){
 				GetAssetPoolBundles (www.bytes);
-				OnUpdateEnded ();
 			}else{
-				
-			}
-		}
+                OnAllUpdated( LocalVersionConfig );
+            }
+            
+        }
 		void GetAssetPoolBundles (byte[] memory)
 		{
 
@@ -112,23 +116,23 @@ namespace wuxingogo.bundle
 			for (int i = 0; i < remoteBundle.bundles.Count; i++) {
 				var bundleInfo = remoteBundle.bundles [i];
 				bool isNew = true;
-				for (int j = 0; j < localVersionConfig.bundles.Count; j++) {
-					var localBundle = localVersionConfig.bundles [j];
+				for (int j = 0; j < LocalVersionConfig.bundles.Count; j++) {
+					var localBundle = LocalVersionConfig.bundles [j];
 					if(bundleInfo.name == localBundle.name){
 						isNew = false;
 						if (localBundle.md5 != bundleInfo.md5) {
-							localVersionConfig.bundles [j] = bundleInfo;
+                            LocalVersionConfig.bundles [j] = bundleInfo;
 							break;
 						}
 					}
 				}
 				if(isNew)
 				{
-					localVersionConfig.bundles.Add (bundleInfo);
+                    LocalVersionConfig.bundles.Add (bundleInfo);
 				}
 			}
-			File.WriteAllText(savePath, JsonMapper.ToJson(localVersionConfig));
-		}
+			File.WriteAllText(savePath, JsonMapper.ToJson( LocalVersionConfig ) );
+        }
 
 		private VersionConfig localVersionConfig;
 
@@ -140,7 +144,7 @@ namespace wuxingogo.bundle
 			}
 			AssetBundle bundle = null;
 
-			var memory = BundleLoader.LoadFileMemory (localVersionConfig.bundleRelativePath + "/" + bundleName + BundleConfig.suffix);
+			var memory = BundleLoader.LoadFileMemory ( LocalVersionConfig.bundleRelativePath + "/" + bundleName + BundleConfig.suffix);
 
 			using (var bundleStream = BundleEncode.DeompressAndDecryptLZMA(memory, password))
 			{
@@ -155,19 +159,5 @@ namespace wuxingogo.bundle
 			return bundle;
 		}
 		#endregion
-		public string UpdateServerPath = "file:///Users/ly-user/Desktop/publish/vc";
-		void Start()
-		{
-			var lvc = LocalVersionConfig;
-			LoadFromWWW (UpdateServerPath);
-//			var go = LoadAssetBundle ("cube").LoadAsset<GameObject> ("Cube");
-//			Instantiate (go);
-		}
-
-		void OnUpdateEnded()
-		{
-			var go = LoadAssetBundle ("cube").LoadAsset<GameObject> ("Cube");
-			Instantiate (go);
-		}
 	}
 }
