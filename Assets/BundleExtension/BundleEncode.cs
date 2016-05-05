@@ -144,8 +144,5 @@ namespace wuxingogo.bundle
             }
 		}
 	}
-
-
-
 }
 

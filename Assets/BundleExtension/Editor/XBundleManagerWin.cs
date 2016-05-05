@@ -49,16 +49,16 @@ namespace wuxingogo.bundle
             }
         }
 
-        public override bool IsAutoScroll
-        {
-            get
-            {
-                return false;
-            }
-        }
-
         public override void OnXGUI()
         {
+            DoButton( "BundleManager Window", () =>
+            {
+                var window = InitWindow<XBundleBrowserWin>();
+                window.position = this.position;
+                this.Close();
+            } );
+
+
             BeginHorizontal();
             CreateLabel( "Version Name" );
             BundleConfig.versionFileName = CreateStringField( BundleConfig.versionFileName );
@@ -81,8 +81,14 @@ namespace wuxingogo.bundle
             if( CreateSpaceButton( "Create New Version" ) )
                 CreateNewVersion();
 
-            DoButton( "Open A Bundle", GetAssetPoolBundles );
-            CreateLabel( Application.temporaryCachePath, true );
+            DoButton<string>( "Open BuildPath", ReviewInFinder, ( isPackageInApp ? ResourcesPath : BuildPath ) );
+
+            DoButton<string>( "Open TemporyPath", ReviewInFinder, Application.temporaryCachePath );
+        }
+
+        void ReviewInFinder( string path )
+        {
+            EditorUtility.RevealInFinder( path );
         }
 
         void CreateNewVersion()
@@ -100,57 +106,6 @@ namespace wuxingogo.bundle
 
             AssetDatabase.Refresh();
 
-
-        }
-
-        void GetAssetPoolBundles()
-        {
-            string relativePath = BuildPath + "/" + BundleConfig.versionFileName;
-
-            var memory = File.ReadAllBytes( relativePath );
-
-            using( MemoryStream memoryStream = new MemoryStream() )
-            {
-                byte[] length = null;
-                int offset = System.Runtime.InteropServices.Marshal.SizeOf( typeof( int ) );
-                memoryStream.Write( memory, 0, offset );
-                length = memoryStream.ToArray();
-                var versionLength = BitConverter.ToInt32( length, 0 );
-
-
-                memoryStream.Position = 0;
-                memoryStream.Write( memory, offset, versionLength );
-                byte[] versionByte = memoryStream.ToArray();
-                using( MemoryStream versionStream = new MemoryStream( versionByte ) )
-                {
-                    string versionContent = "";
-                    StreamUtils.Read( versionStream, out versionContent );
-                    currVersion = JsonMapper.ToObject<VersionConfig>( versionContent );
-                }
-
-                offset = offset + versionByte.Length;
-                int limit = memory.Length - offset;
-
-                memoryStream.Position = 0;
-                memoryStream.Write( memory, offset, limit );
-                byte[] buffer = memoryStream.ToArray();
-                int index = 0;
-                int count = 0;
-                foreach( var item in currVersion.bundles )
-                {
-                    count = ( int )item.size;
-                    using( MemoryStream bundleStream = new MemoryStream() )
-                    {
-                        bundleStream.Write( buffer, index, count );
-                        var decryptBuffer = BundleEncode.DeompressAndDecryptLZMA( bundleStream.ToArray(), BundleConfig.password );
-                        var assetbundle = AssetBundle.CreateFromMemoryImmediate( decryptBuffer.ToArray() );
-                        assetbundle.Unload( true );
-
-                    }
-                    index += count;
-                }
-
-            }
 
         }
 
@@ -177,22 +132,48 @@ namespace wuxingogo.bundle
             }
             Directory.CreateDirectory( destPath );
 
-            foreach( var bundle in bundles )
-            {
+            
 
+
+            for( int i = 0; i < bundles.Count; i++ )
+            {
+                EditorUtility.DisplayCancelableProgressBar( "Hold On", "Copying AssetBundle", i * 1.0f / bundles.Count );
+                var bundle = bundles[i];
+                var bundleName = bundle.name;
+                var directoryPath = destPath;
+                while( bundleName.Contains( "/" ) )
+                {
+                    Debug.Log( "ago bundleName : " + bundleName );
+                    int index = bundleName.IndexOf( "/" ) + 1;
+                    var diretoryName = bundleName.Substring( 0, index - 1 );
+                    Debug.Log( "directoryName : "  + diretoryName );
+                    bundleName = bundleName.Substring( index, bundleName.Length - index );
+                    Debug.Log( "now bundleName : " + bundleName );
+                    directoryPath += "/" + diretoryName;
+                    Directory.CreateDirectory( directoryPath );
+                }
                 var bytes = File.ReadAllBytes( BundleConfig.bundlePoolRelativePath + "/" + buildTarget + "/" + bundle.name );
                 var memory = BundleEncode.GetCompressAndEncryptLZMA( bytes, BundleConfig.password );
 
                 bundle.size = ( uint )memory.Length;
                 bundle.md5 = BundleEncode.GetFileMD5( memory );
 
-                if( isPackageInApp ){
+                if( isPackageInApp )
+                {
                     BundleEncode.CreateBinaryFile( destPath + "/" + bundle.name + BundleConfig.suffix, memory );
                 }
-                else if(!isPackageInApp && !bundle.isExist() ){
+                else if( !isPackageInApp && !bundle.isExist() )
+                {
                     BundleEncode.CreateBinaryFile( destPath + "/" + BundleConfig.versionFileName, memory );
                 }
+                
             }
+            EditorUtility.ClearProgressBar();
+        }
+
+        void BrowseAssetBundle()
+        {
+
         }
 
         public void CreateVersionFile( List<BundleInfo> bundles, bool copyToStreamingAssets = false )
@@ -201,7 +182,7 @@ namespace wuxingogo.bundle
             if( copyToStreamingAssets )
                 destPath = ResourcesPath + "/" + BundleConfig.versionFileName + BundleConfig.suffix;
             else
-                destPath =  BuildPath + BundleConfig.versionFileName;
+                destPath =  BuildPath + "/" + BundleConfig.versionFileName;
 
             VersionConfig vc = new VersionConfig();
             vc.versionNum = DateTime.Now.ToString();
