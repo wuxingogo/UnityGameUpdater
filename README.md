@@ -34,3 +34,12 @@ BundleExtension是基于我的插件WuxingogoExtension之上写的,如果觉着�
 WuxingogoExtension:
 
 https://github.com/wuxingogo/WuxingogoExtension
+
+
+
+##Note:
+
+Unity5.x buildBundle会自动把依赖分好。prefab尤其重要，最好把模型(.fbx)和动画(.anim)都使用一个bundle。要不然两个相同的prefab会将这些都打入各自的bundle里，bundle巨大。如果打入公共bundle里则必须先加载公共bundle，否则资源丢失。还好Unity把依赖自己识别了，5.X很方便。
+
+
+Contact: 52111314ly@sina.com
