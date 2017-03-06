@@ -30,7 +30,8 @@ namespace wuxingogo.bundle
 					return _instance;
 				
 				GameObject go = new GameObject ("BundleManager");
-				DontDestroyOnLoad (go);
+				if(Application.isPlaying)
+					DontDestroyOnLoad (go);
 				go.hideFlags = HideFlags.DontSaveInEditor;
 				_instance = go.AddComponent<BundleManager> ();
 			}
@@ -149,7 +150,7 @@ namespace wuxingogo.bundle
 			{
 				if (bundleStream == null)
 					return bundle;
-				bundle = AssetBundle.CreateFromMemoryImmediate(bundleStream.ToArray());
+				bundle = AssetBundle.LoadFromMemory(bundleStream.ToArray());
 				if (bundle == null)		// 如果没有则直接返回
 					return bundle;
 			}

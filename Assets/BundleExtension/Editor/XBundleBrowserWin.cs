@@ -90,7 +90,7 @@ namespace wuxingogo.bundle
             {
                 if( bundleStream == null )
                     return bundle;
-                bundle = AssetBundle.CreateFromMemoryImmediate( bundleStream.ToArray() );
+                bundle = AssetBundle.LoadFromMemory( bundleStream.ToArray() );
             }
             return bundle;
         }

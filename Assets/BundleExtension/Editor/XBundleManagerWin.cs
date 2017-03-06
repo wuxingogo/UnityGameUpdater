@@ -98,7 +98,7 @@ namespace wuxingogo.bundle
                 Directory.CreateDirectory( BundleConfig.bundlePoolRelativePath + "/" + buildTarget );
             }
             BuildPipeline.BuildAssetBundles( BundleConfig.bundlePoolRelativePath + "/" + buildTarget,
-                BuildAssetBundleOptions.UncompressedAssetBundle, buildTarget );
+                BuildAssetBundleOptions.ChunkBasedCompression, buildTarget );
 
             GetAllBundles();
             CopyResources();
