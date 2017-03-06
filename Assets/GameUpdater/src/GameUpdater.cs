@@ -299,7 +299,7 @@ namespace newx
                 {
                     if (bundleStream == null)
                         return bundle;
-                    bundle = AssetBundle.CreateFromMemoryImmediate(bundleStream.ToArray());
+                    bundle = AssetBundle.LoadFromMemory(bundleStream.ToArray());
                     if (bundle == null)
                         return bundle;
                     if (cache)
@@ -313,7 +313,7 @@ namespace newx
                 {
                     if (bundleStream == null)
                         return bundle;
-                    bundle = AssetBundle.CreateFromMemoryImmediate(bundleStream.ToArray());
+                    bundle = AssetBundle.LoadFromMemory(bundleStream.ToArray());
                     if (bundle == null)
                         return bundle;
                     if (cache)
